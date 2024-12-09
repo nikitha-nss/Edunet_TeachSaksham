@@ -1,1 +1,74 @@
+!pip install pandas scikit-learn matplotlib seaborn
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Load the Dataset
+from google.colab import files
+uploaded = files.upload()
+data = pd.read_csv("email_Spam.csv") 
+
+# Inspect the Data
+print(data.head())  
+print(data.columns)  
+
+# Data Preprocessing
+data = data.dropna(subset=['Message', 'Category'])
+
+data = data.drop_duplicates()
+
+print(data.head())
+
+# Split Data into Features and Labels
+X = data['Message']
+y = data['Category']
+
+# Split Data into Training and Testing Sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 8: Convert Text Data into Numeric Data Using TF-IDF Vectorization
+vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
+X_train_tfidf = vectorizer.fit_transform(X_train)
+X_test_tfidf = vectorizer.transform(X_test)
+
+# Train the Model (Naive Bayes)
+model = MultinomialNB()
+model.fit(X_train_tfidf, y_train)
+
+# Make Predictions on the Test Set
+y_pred = model.predict(X_test_tfidf)
+
+# Evaluate the Model
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy: {accuracy:.4f}')
+
+# Confusion Matrix
+cm = confusion_matrix(y_test, y_pred)
+plt.figure(figsize=(10, 7))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=model.classes_, yticklabels=model.classes_)
+plt.title('Confusion Matrix')
+plt.xlabel('Predicted')
+plt.ylabel('True')
+plt.show()
+
+# Classification Report
+print('Classification Report:')
+print(classification_report(y_test, y_pred))
+
+# Visualize Results 
+
+labels = ['Spam', 'Ham']  
+spam_ham = [cm[0, 0], cm[1, 1]]  
+
+plt.figure(figsize=(6, 4))
+plt.bar(labels, spam_ham, color=['red', 'green'])
+plt.xlabel('Email Type')
+plt.ylabel('Count')
+plt.title('Model Performance on Spam vs Ham Emails')
+plt.show()
 
